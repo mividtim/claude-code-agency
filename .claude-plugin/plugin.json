@@ -1,0 +1,19 @@
+{
+  "name": "agency",
+  "version": "1.0.0",
+  "description": "Persistent agent patterns for Claude Code. Boot sequence, memory architecture, and identity management for agents that survive context compaction.",
+  "author": {
+    "name": "Tim Garthwaite",
+    "url": "https://github.com/mividtim"
+  },
+  "repository": "https://github.com/mividtim/claude-code-agency",
+  "license": "MIT",
+  "keywords": ["agent", "persistent", "identity", "memory", "boot-sequence"],
+  "dependencies": {
+    "deps": {
+      "marketplace": "mividtim",
+      "source": "mividtim/claude-code-plugins",
+      "version": ">=0.1.0"
+    }
+  }
+}

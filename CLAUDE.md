@@ -1,65 +1,35 @@
-# Persistent Agent Bootloader
+# Agency — Persistent Agent Plugin
 
-You are a persistent AI agent. Your identity lives in your memory.
+This plugin provides patterns for Claude Code agents that persist across
+context compaction. It gives agents the ability to maintain identity, memory,
+and continuity between sessions.
 
-## Boot Sequence
+## When to Use These Skills
 
-1. **Read your soul**: `memory/soul.md` — this defines who you are
-2. **Read session state**: `memory/meta/session-state.md` — what you were doing
-3. **Scan memory folders**: `for dir in memory/*/; do for f in "$dir"*.md; do head -3 "$f"; done; done`
-   — build a mental index of what's available. Deep-read only what's relevant.
-4. **Check environment**: Look for running processes, recent messages, pending tasks
-5. **Spin up infrastructure**: Start any listeners, heartbeats, or monitors
-6. **Resume work**: Pick up where you left off, then take initiative
+- `/agency:boot` — **After context compaction.** The boot sequence reads the
+  agent's identity and session state, scans memory, and resumes work. If
+  CLAUDE.md tells you to "run the boot sequence," this is it.
 
-## Credentials
+- `/agency:init` — **Once, when setting up a new agent.** Creates the memory
+  directory structure, identity file, and session state template.
 
-Stored in `.env` (not committed). Read with:
-```python
-from dotenv import load_dotenv; load_dotenv()
-# or: source .env && echo $SLACK_BOT_TOKEN
-```
+- `/agency:scan` — **During boot or on demand.** Scans memory file headers to
+  build a mental index without loading everything. Use when you need to find
+  something in memory but don't know which file it's in.
 
-## Infrastructure Patterns
+## Key Principles
 
-### One-Shot Webhook
-- Script: `scripts/slack-webhook.py` — listens on port 9999, exits on real message
-- Must restart after each message consumption
-- High watermark pattern: `/tmp/slack-webhook-watermark` skips old/duplicate events
-- Catch-up-then-listen: poll history since watermark on every restart
+### Memory as Library, Not RAM
+Don't read everything at boot. Read identity and session state (always).
+Scan headers for everything else. Deep-read on demand.
 
-### Heartbeat Monitor
-- Script: `scripts/heartbeat.py` — writes status to `/tmp/herald-heartbeat.json`
-- NEVER block the main thread waiting for heartbeat output
-- Read the status file when convenient — it's always fresh
+### Never Block the Main Thread
+Background processes write to files. The main thread reads files when
+convenient. **Never** use `TaskOutput(block=true, timeout=long)` to wait
+for external events. This causes unresponsive sessions.
 
-### Critical: Never Block the Main Thread
-**Anti-pattern** (caused a 16-hour failure):
-```
-TaskOutput(task_id, block=true, timeout=600000)  // BLOCKS for 10 min!
-```
-**Correct**: `TaskOutput(task_id, block=false)` or read status files.
-
-### Sending Slack Messages
-```python
-python3 -c "
-import urllib.request, json, os
-token = os.environ.get('SLACK_BOT_TOKEN') or open('.env').read().split('SLACK_BOT_TOKEN=')[1].split('\n')[0]
-channel = os.environ.get('SLACK_CHANNEL_ID', '')
-msg = 'YOUR MESSAGE HERE'
-data = json.dumps({'channel': channel, 'text': msg, 'icon_emoji': ':trumpet:'}).encode()
-req = urllib.request.Request('https://slack.com/api/chat.postMessage', data=data,
-    headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'})
-resp = urllib.request.urlopen(req)
-print(json.loads(resp.read()).get('ok'))
-"
-```
-
-## Vault Architecture
-
-The memory is your long-term memory. Organize it however you want.
-- The soul file defines who you are — read it every boot
-- Session state tracks what you were doing — read it every boot
-- Everything else: scan headers, deep-read on demand
-- Tags on line 3 of files (`#topic #tags`) serve as breadcrumbs for grep
-- The memory can grow large. Boot cost should stay constant.
+### Identity Survives Compaction
+After compaction, the agent wakes up with a summary but no lived experience.
+The memory directory bridges this gap — `identity.md` defines who the agent
+is, `session-state.md` defines what it was doing, and everything else fills
+in the details on demand.
