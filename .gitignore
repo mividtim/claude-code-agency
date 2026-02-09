@@ -1,0 +1,16 @@
+# Secrets
+.env
+
+# Vault (separate repo — the agent's private identity/memory)
+memory/
+
+# Temporary files
+/tmp/
+*.pyc
+__pycache__/
+
+# OS files
+.DS_Store
+
+# Claude Code internals
+.claude/
