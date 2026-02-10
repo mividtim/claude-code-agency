@@ -1,0 +1,7 @@
+{
+  "deps": {
+    "marketplace": "mividtim",
+    "source": "mividtim/claude-code-plugins",
+    "version": ">=0.2.0"
+  }
+}
