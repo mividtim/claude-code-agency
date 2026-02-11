@@ -106,6 +106,14 @@ The context (when it was learned, what went wrong, how many times you violated
 it) belongs in **archival memory**, indexed and searched on demand. Before
 writing to identity.md, ask: "Does future-me need this on every single boot?"
 
+### Single Source of Truth
+Every principle, rule, or convention should live in exactly one place. This
+plugin's CLAUDE.md is the authority for memory architecture principles. Skill
+files (boot, index, search) contain *procedures*, not restated principles.
+Agent identity templates contain *pointers* to principles, not copies. When
+you find the same rule in two files, delete the copy and add a reference.
+Duplication means the next edit will fix one copy and leave the other stale.
+
 ### Keep the Index Current
 When you write or update a file in `memory/`, run `/agency:index` afterward to
 keep the semantic index current. The index is how future-you (or a subagent)
