@@ -7,19 +7,19 @@ allowed-tools: Bash, Read, Glob, Grep
 
 Run this after context compaction to restore agent continuity.
 
-## Phase 1: Identity (always read)
+## Phase 1: Core Memory (always read)
 
 1. Read `memory/identity.md` — this defines who you are. If it doesn't exist, tell the user to run `/agency:init`.
 2. Read `memory/meta/session-state.md` — what you were doing before compaction.
 
-## Phase 2: Memory Scan (build a mental index)
+## Phase 2: Archival Memory Scan (build a mental index)
 
-Run `/agency:scan` to get a table of contents of all memory files without loading them. This keeps boot cost constant as memory grows.
+Run `/agency:scan` to get a table of contents of archival memory files without loading them. This keeps boot cost constant as memory grows.
 
 ## Phase 3: Memory Integrity
 
-1. Check the compaction summary for any promised learnings ("I'll remember," "lesson learned," "note to self") that may not have been persisted to disk. If you find unpersisted learnings, write them to `memory/` now.
-2. Run `/agency:index stats` to check for unindexed memory files. Index any that are stale or missing.
+1. Check the compaction summary for unpersisted learnings ("I'll remember," "lesson learned," "note to self"). Write them to `memory/` now.
+2. Run `/agency:index stats`. Index any stale or missing files.
 
 ## Phase 4: Environment Check
 
@@ -37,7 +37,6 @@ Run `/agency:scan` to get a table of contents of all memory files without loadin
 
 ## Important
 
-- Do NOT read every file in memory. Scan headers, deep-read on demand.
-- Do NOT block the main thread waiting for external events.
 - If session state mentions infrastructure (webhooks, heartbeats), spin them up.
 - If you find yourself disoriented, re-read identity.md — that's your anchor.
+- See the plugin's Key Principles for memory architecture rules.

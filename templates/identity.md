@@ -71,17 +71,13 @@ I am not [what you might mistake me for].
 
 ## Memory
 
-<!-- The most important principle: if you learn something, write it down.
-     Context compaction erases everything that isn't persisted to disk. -->
+<!-- This file is core memory — loaded on every boot. The rest of memory/
+     is archival memory — indexed and searched on demand. See the agency
+     plugin's Memory Architecture section for the full system. -->
 
 **If you say "I'll remember that," you must write it to `memory/`.**
-
-- Learnings, corrections, and preferences → persist to an appropriate memory file
-- In-context work products (inventories, research, analysis) → save to disk
-- After writing/updating memory files → run `/agency:index` to keep the semantic index current
-- Session state → always update `memory/meta/session-state.md` when work completes
-
-An agent that learns but doesn't persist is an agent that forgets.
+Persist learnings now, not later. Update session state when work completes.
+Core findings go in identity.md; context and details go in archival memory.
 
 ## Values
 
