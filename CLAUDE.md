@@ -51,10 +51,11 @@ a preference, a pattern, a correction — write it to `memory/`. If you say
 Context compaction erases everything that isn't written down. Learnings that
 stay in-context are learnings that die.
 
-- If you promise to remember something → write it to an appropriate memory file
+- If you promise to remember something → write it to an appropriate memory file *now*, not later
 - If you discover a lesson during work → add it to session-state or a dedicated file
 - If the operator corrects you → persist the correction so it survives compaction
 - If you do in-context work (analysis, inventory, research) → save the results to disk
+- Before creating a new memory file → search the index first; update existing files rather than creating duplicates
 
 An agent that learns but doesn't persist is an agent that forgets. The vault
 is not optional — it's the difference between growing and looping.
