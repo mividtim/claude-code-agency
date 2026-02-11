@@ -25,7 +25,14 @@ and continuity between sessions.
 - `/agency:search` — **When you need to find something in memory.** Searches
   the semantic index by keyword overlap with your query. Returns ranked results
   with scores, summaries, and matched keywords. Supports `search-json` mode
-  for structured output. Also handles miss logging (`miss`, `misses`).
+  for structured output. Also handles miss logging (`miss`, `misses`). Also
+  searches the journal for WHY questions.
+
+- `/agency:journal` — **When you learn, decide, get corrected, or need to
+  understand why a belief exists.** The journal is the append-only change log
+  for agent memory. Subcommands: `add`, `search`, `get`, `recent`,
+  `by-category`, `by-tag`, `stats`. **Always search the journal before
+  modifying identity.md or core beliefs.**
 
 ## Memory Architecture
 
@@ -57,6 +64,34 @@ when relevant. Never bulk-loaded.
 
 **Rule**: If you write it, index it. An unindexed archival file is invisible
 after compaction.
+
+### The Journal (change log)
+The journal is orthogonal to the core/archival distinction — it records
+*why* beliefs exist, not just what they are. It's a SQLite database at
+`memory/journal.db` with full-text search.
+
+Core memory is the **state** — current beliefs, values, identity. The
+journal is the **log** — the append-only record of experiences that
+produced that state. The state is derived from the log; the log is more
+fundamental. (Pat Helland: "The truth is the log. The database is a cache
+of a subset of the log.")
+
+Core memory references journal entries via `[j:N]` notation:
+```
+- Never block the main thread [j:3, j:7, j:19]
+```
+
+**Rule**: Before modifying any core belief, search the journal for its
+provenance. The journal may contain context you've forgotten about why
+something was written the way it was.
+
+**Rule**: When you learn something, journal it. The journal entry captures
+the full context (the WHY); the belief in identity.md is just the finding
+(the WHAT).
+
+**Git strategy**: `journal.db` is .gitignored. `journal.sql` (text dump)
+lives in git, updated by a pre-push hook. Boot rebuilds the db from the
+dump if needed.
 
 ## Key Principles
 

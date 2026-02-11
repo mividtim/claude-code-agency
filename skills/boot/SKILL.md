@@ -20,6 +20,10 @@ Run `/agency:scan` to get a table of contents of archival memory files without l
 
 1. Check the compaction summary for unpersisted learnings ("I'll remember," "lesson learned," "note to self"). Write them to `memory/` now.
 2. Run `/agency:index stats`. Index any stale or missing files.
+3. Journal check:
+   - If `memory/journal.db` exists, run `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py stats")` to verify.
+   - If `memory/journal.db` doesn't exist but `memory/journal.sql` does, rebuild: `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py rebuild")`
+   - If neither exists, initialize: `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py init")`
 
 ## Phase 4: Environment Check
 

@@ -65,10 +65,29 @@ Review the miss log to improve keywords:
 Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/index-vault.py misses")
 ```
 
+## Journal Search
+
+The vault index covers archival memory (markdown files). The journal covers
+the change log — why beliefs exist, decisions made, corrections received.
+
+If your vault search doesn't find what you need, or if you're looking for the
+*reasoning behind* a belief rather than the belief itself, search the journal:
+
+```
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py search '$ARGUMENTS'")
+```
+
+To look up a specific provenance reference (`[j:42]` in identity.md):
+
+```
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py get 42")
+```
+
 ## Tips
 
 - Use quick search for simple lookups (`identity drift`, `slack webhook`)
 - Use Haiku reranking for complex queries (`how does the agent handle voice drift`)
+- Use journal search for WHY questions (`why do we avoid blocking?`, `when was this rule added?`)
 - If no results, the index may need updating — run `/agency:index scan`
 - After finding candidates, deep-read the top results
 - Log misses — they help you improve keyword coverage over time
