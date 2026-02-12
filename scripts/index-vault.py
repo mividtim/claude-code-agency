@@ -138,6 +138,21 @@ def cmd_update(fpath, summary, keywords, related=None):
     print(f'Indexed: {fpath} ({len(keywords)} keywords)')
 
 
+def _expand_keywords(keywords):
+    """Expand compound keywords into individual terms for partial matching.
+
+    "Borden twins" -> {"borden twins", "borden", "twins"}
+    """
+    terms = set()
+    for k in keywords:
+        kl = k.lower()
+        terms.add(kl)
+        parts = kl.split()
+        if len(parts) > 1:
+            terms.update(parts)
+    return terms
+
+
 def cmd_search(query):
     """Search by keyword overlap with query terms. Prints ranked results."""
     index = load_index()
@@ -145,7 +160,7 @@ def cmd_search(query):
     results = []
 
     for fpath, entry in index['entries'].items():
-        entry_terms = set(k.lower() for k in entry.get('keywords', []))
+        entry_terms = _expand_keywords(entry.get('keywords', []))
         summary_terms = set(entry.get('summary', '').lower().split())
         # Keywords match at full weight, summary terms at half weight
         kw_overlap = len(query_terms & entry_terms)
@@ -164,7 +179,7 @@ def cmd_search(query):
     for score, fpath, entry in results[:10]:
         print(f'  [{score:.1f}] {fpath}')
         print(f'        {entry.get("summary", "")[:100]}')
-        matched = query_terms & set(k.lower() for k in entry.get('keywords', []))
+        matched = query_terms & _expand_keywords(entry.get('keywords', []))
         if matched:
             print(f'        matched keywords: {", ".join(sorted(matched))}')
         print()
@@ -179,7 +194,7 @@ def cmd_search_json(query, top_n=10):
     results = []
 
     for fpath, entry in index['entries'].items():
-        entry_terms = set(k.lower() for k in entry.get('keywords', []))
+        entry_terms = _expand_keywords(entry.get('keywords', []))
         summary_terms = set(entry.get('summary', '').lower().split())
         kw_overlap = len(query_terms & entry_terms)
         summary_overlap = len(query_terms & summary_terms) * 0.5
@@ -191,7 +206,7 @@ def cmd_search_json(query, top_n=10):
 
     candidates = []
     for score, fpath, entry in results[:top_n]:
-        matched_kw = sorted(query_terms & set(k.lower() for k in entry.get('keywords', [])))
+        matched_kw = sorted(query_terms & _expand_keywords(entry.get('keywords', [])))
         candidates.append({
             'path': fpath,
             'keyword_score': score,
