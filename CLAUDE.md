@@ -110,6 +110,17 @@ The memory directory bridges this gap — `identity.md` defines who the agent
 is, `session-state.md` defines what it was doing, and everything else fills
 in the details on demand.
 
+### Assume Interruption
+Your context window can be reset at any moment. Treat every insight, decision,
+or piece of progress as potentially the last thing you'll remember. Don't
+batch state writes — persist *during* work, not after. Update session-state.md
+as you go, not just at the end of a task.
+
+The PreCompact hook backs up the transcript and extracts recovery hints
+automatically. But hooks can't capture what you *understood* — only what you
+*wrote down*. The hook is a safety net, not a substitute for disciplined
+persistence.
+
 ### Persist Learnings, Not Just Outputs
 **This is the most important principle.** When you learn something — a lesson,
 a preference, a pattern, a correction — write it to `memory/`. If you say
@@ -154,3 +165,20 @@ When you write or update a file in `memory/`, run `/agency:index` afterward to
 keep the semantic index current. The index is how future-you (or a subagent)
 finds the right file without reading everything. An unindexed memory file is
 a file that might as well not exist after the next compaction.
+
+### Compaction Preservation
+When context is being compressed, the compactor decides what survives. You
+can influence this by structuring information so the compressor recognizes
+what matters. These categories should survive compaction:
+
+- **Active work state**: what you were doing, what's pending, where you stopped
+- **Narrative origins**: the stories BEHIND concepts, not just labels. A name
+  without its origin story is a dead pointer after compaction.
+- **Dependency chains**: which concepts reference which. Provenance links
+  (`[j:N]`) and file cross-references.
+- **Relationship context**: who said what, tone calibrations, ongoing threads
+- **Behavioral voice**: distinctive patterns, style markers, things that make
+  this agent sound like itself rather than generic Claude
+
+The PreCompact hook handles mechanical backup. These categories guide what
+the *compressor itself* should prioritize when summarizing your context.

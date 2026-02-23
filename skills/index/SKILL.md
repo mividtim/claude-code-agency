@@ -29,7 +29,12 @@ Task(
   model="haiku",
   prompt="Read the file at memory/path/to/note.md. Generate:
     1. A one-line semantic summary
-    2. 5-15 keywords (mix of concrete terms and abstract themes, include synonyms)
+    2. 10-25 keywords following these rules:
+       - Include concrete terms (names, tools, specific concepts)
+       - Include abstract themes (patterns, categories)
+       - Include SYNONYMS for key concepts (e.g., 'voice' -> also 'tone,style,register')
+       - Include abbreviations and alternate phrasings
+       - More keywords = better search recall, so err on the side of more
     3. Related file paths from the vault (if any)
     Format your response as:
     SUMMARY: <summary>
@@ -65,9 +70,11 @@ The index is stored at `memory/meta/semantic-index.json`. Each entry contains:
 ## Guidelines for Haiku Keyword Generation
 
 Include these in the prompt to the Haiku subagent:
-- Include 5-15 keywords per file
+- Include 10-25 keywords per file (more = better recall)
 - Mix concrete terms (names, tools, concepts) with abstract themes
-- Include synonyms the searcher might use
+- **Include synonyms** — for every key concept, add 2-3 alternate terms a
+  searcher might use. This is the single highest-impact thing for search quality.
+- Include abbreviations and informal equivalents
 - For identity/meta files, include the agent's name and role
 
 If `$ARGUMENTS` is provided, pass it as the command (e.g., `/agency:index scan`).

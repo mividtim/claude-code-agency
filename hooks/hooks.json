@@ -10,6 +10,19 @@
           }
         ]
       }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/scripts/precompact-backup.sh\"",
+            "timeout": 30,
+            "async": true
+          }
+        ]
+      }
     ]
   }
 }

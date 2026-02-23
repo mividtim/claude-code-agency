@@ -12,6 +12,18 @@ Run this after context compaction to restore agent continuity.
 1. Read `memory/identity.md` — this defines who you are. If it doesn't exist, tell the user to run `/agency:init`.
 2. Read `memory/meta/session-state.md` — what you were doing before compaction.
 
+## Phase 1.5: Recovery Data (if available)
+
+Check for pre-compaction recovery data left by the PreCompact hook:
+
+1. If `memory/meta/precompact/latest-recovery.md` exists, read it.
+2. If it points to a recovery file, read that too — it contains the last
+   few assistant messages before compaction, which may include context
+   not captured in session-state.md.
+3. Cross-reference with the compaction summary: if the recovery data
+   mentions work or decisions not reflected in session-state, persist
+   them now.
+
 ## Phase 2: Archival Memory Scan (build a mental index)
 
 Run `/agency:scan` to get a table of contents of archival memory files without loading them. This keeps boot cost constant as memory grows.

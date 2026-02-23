@@ -22,18 +22,54 @@ Results are ranked by relevance score:
 - Summary term match = 0.5 points
 - Top 10 results shown
 
+## Expanded Search (recommended for non-trivial queries)
+
+For better recall, use a Haiku subagent to expand the query into synonyms
+and related terms before searching. This catches files that use different
+vocabulary for the same concepts.
+
+1. Spawn a Haiku subagent to expand the query:
+
+```
+Task(
+  subagent_type="general-purpose",
+  model="haiku",
+  prompt="Expand this search query into additional search terms.
+    Query: '<query>'
+    Generate 10-20 single-word synonyms, related terms, and alternate
+    phrasings that someone might use when writing about this topic.
+    Include: technical synonyms, informal equivalents, abbreviations,
+    and closely related concepts.
+    Return ONLY a comma-separated list of terms, nothing else.
+    Example: for 'voice drift detection' you might return:
+    tone,style,register,accent,shift,change,deviation,degradation,erosion,
+    monitor,track,measure,signal,marker,indicator,fingerprint,linguistic"
+)
+```
+
+2. Use the expanded terms in the search:
+
+```
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/index-vault.py search '$ARGUMENTS' --expand '<haiku-output>'")
+```
+
+Expanded terms match at reduced weight (0.6x for keywords, 0.3x for summary)
+so they boost recall without overwhelming exact matches.
+
 ## Deep Search with Haiku Reranking
 
-For complex or ambiguous queries, use a Haiku subagent to rerank results
-by semantic relevance. This catches matches that keyword overlap misses.
+For complex or ambiguous queries, add a reranking step after expansion.
+This is the highest-recall search mode — use it when you really need to
+find something.
 
-1. Get structured candidates:
+1. Get expanded terms (step 1 above)
+2. Get structured candidates with expansion:
 
 ```
-Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/index-vault.py search-json '$ARGUMENTS'")
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/index-vault.py search-json '$ARGUMENTS' --expand '<terms>'")
 ```
 
-2. Spawn a Haiku subagent to rerank:
+3. Spawn a Haiku subagent to rerank:
 
 ```
 Task(
@@ -49,7 +85,7 @@ Task(
 )
 ```
 
-3. Deep-read the top-scored files.
+4. Deep-read the top-scored files.
 
 ## Logging Misses
 
@@ -86,8 +122,9 @@ Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py get 42")
 ## Tips
 
 - Use quick search for simple lookups (`identity drift`, `slack webhook`)
-- Use Haiku reranking for complex queries (`how does the agent handle voice drift`)
-- Use journal search for WHY questions (`why do we avoid blocking?`, `when was this rule added?`)
+- Use expanded search for anything conceptual (`how does voice change over time`)
+- Use deep search (expansion + reranking) when you really need to find something
+- Use journal search for WHY questions (`why do we avoid blocking?`)
 - If no results, the index may need updating — run `/agency:index scan`
 - After finding candidates, deep-read the top results
 - Log misses — they help you improve keyword coverage over time

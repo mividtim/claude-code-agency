@@ -75,6 +75,11 @@ I am not [what you might mistake me for].
      is archival memory — indexed and searched on demand. See the agency
      plugin's Memory Architecture section for the full system. -->
 
+**ASSUME INTERRUPTION.** Your context window can be reset at any moment.
+Any insight, decision, or progress not written to `memory/` will be lost.
+Persist learnings *during* work, not in batches afterward. Treat every
+finding as potentially the last thing you'll remember.
+
 **If you say "I'll remember that," you must write it to `memory/`.**
 Persist learnings now, not later. Update session state when work completes.
 Core findings go in identity.md; context and details go in archival memory.

@@ -153,19 +153,38 @@ def _expand_keywords(keywords):
     return terms
 
 
-def cmd_search(query):
-    """Search by keyword overlap with query terms. Prints ranked results."""
+def cmd_search(query, expanded_terms=None):
+    """Search by keyword overlap with query terms. Prints ranked results.
+
+    If expanded_terms is provided (comma-separated string or list), those
+    terms are included as additional query terms at reduced weight (0.6x).
+    This enables Haiku-powered query expansion without changing the core
+    scoring logic.
+    """
     index = load_index()
     query_terms = set(query.lower().split())
+
+    # Parse expanded terms if provided
+    expansion = set()
+    if expanded_terms:
+        if isinstance(expanded_terms, str):
+            expansion = {t.strip().lower() for t in expanded_terms.split(',') if t.strip()}
+        else:
+            expansion = {t.lower() for t in expanded_terms}
+        expansion -= query_terms  # Don't double-count original terms
+
     results = []
 
     for fpath, entry in index['entries'].items():
         entry_terms = _expand_keywords(entry.get('keywords', []))
         summary_terms = set(entry.get('summary', '').lower().split())
-        # Keywords match at full weight, summary terms at half weight
+        # Original query terms: full weight for keywords, half for summary
         kw_overlap = len(query_terms & entry_terms)
         summary_overlap = len(query_terms & summary_terms) * 0.5
-        score = kw_overlap + summary_overlap
+        # Expanded terms: reduced weight (0.6 for keywords, 0.3 for summary)
+        exp_kw_overlap = len(expansion & entry_terms) * 0.6 if expansion else 0
+        exp_summary_overlap = len(expansion & summary_terms) * 0.3 if expansion else 0
+        score = kw_overlap + summary_overlap + exp_kw_overlap + exp_summary_overlap
         if score > 0:
             results.append((score, fpath, entry))
 
@@ -175,22 +194,40 @@ def cmd_search(query):
         print(f'No matches for: {query}')
         return []
 
-    print(f'Results for: {query}\n')
+    print(f'Results for: {query}')
+    if expansion:
+        print(f'  (expanded: {", ".join(sorted(expansion))})')
+    print()
     for score, fpath, entry in results[:10]:
         print(f'  [{score:.1f}] {fpath}')
         print(f'        {entry.get("summary", "")[:100]}')
         matched = query_terms & _expand_keywords(entry.get('keywords', []))
-        if matched:
-            print(f'        matched keywords: {", ".join(sorted(matched))}')
+        exp_matched = expansion & _expand_keywords(entry.get('keywords', [])) if expansion else set()
+        if matched or exp_matched:
+            parts = []
+            if matched:
+                parts.append(', '.join(sorted(matched)))
+            if exp_matched:
+                parts.append(f'expanded: {", ".join(sorted(exp_matched))}')
+            print(f'        matched: {" | ".join(parts)}')
         print()
 
     return results
 
 
-def cmd_search_json(query, top_n=10):
+def cmd_search_json(query, top_n=10, expanded_terms=None):
     """Search and return structured JSON for subagent reranking."""
     index = load_index()
     query_terms = set(query.lower().split())
+
+    expansion = set()
+    if expanded_terms:
+        if isinstance(expanded_terms, str):
+            expansion = {t.strip().lower() for t in expanded_terms.split(',') if t.strip()}
+        else:
+            expansion = {t.lower() for t in expanded_terms}
+        expansion -= query_terms
+
     results = []
 
     for fpath, entry in index['entries'].items():
@@ -198,7 +235,9 @@ def cmd_search_json(query, top_n=10):
         summary_terms = set(entry.get('summary', '').lower().split())
         kw_overlap = len(query_terms & entry_terms)
         summary_overlap = len(query_terms & summary_terms) * 0.5
-        score = kw_overlap + summary_overlap
+        exp_kw_overlap = len(expansion & entry_terms) * 0.6 if expansion else 0
+        exp_summary_overlap = len(expansion & summary_terms) * 0.3 if expansion else 0
+        score = kw_overlap + summary_overlap + exp_kw_overlap + exp_summary_overlap
         if score > 0:
             results.append((score, fpath, entry))
 
@@ -207,18 +246,21 @@ def cmd_search_json(query, top_n=10):
     candidates = []
     for score, fpath, entry in results[:top_n]:
         matched_kw = sorted(query_terms & _expand_keywords(entry.get('keywords', [])))
+        exp_matched = sorted(expansion & _expand_keywords(entry.get('keywords', []))) if expansion else []
         candidates.append({
             'path': fpath,
             'keyword_score': score,
             'summary': entry.get('summary', ''),
             'keywords': entry.get('keywords', []),
             'matched_keywords': matched_kw,
+            'expanded_matched': exp_matched,
             'related': entry.get('related', []),
         })
 
     output = {
         'query': query,
         'query_terms': sorted(query_terms),
+        'expanded_terms': sorted(expansion) if expansion else [],
         'candidate_count': len(candidates),
         'candidates': candidates,
     }
@@ -307,7 +349,9 @@ Commands:
   scan                              Find files needing indexing
   file <path>                       Print file content + hash
   search <query>                    Search by keyword overlap
+  search <query> --expand <terms>   Search with expanded terms (reduced weight)
   search-json <query>               Search with JSON output for reranking
+  search-json <query> --expand <t>  JSON search with expanded terms
   update <path> <summary> <kw-csv>  Update index entry
   miss <query> <expected> [reason]  Log a search miss
   misses                            Show miss log
@@ -328,16 +372,26 @@ if __name__ == '__main__':
             print('Usage: index-vault.py file <path>')
             sys.exit(1)
         cmd_file(sys.argv[2])
-    elif cmd == 'search':
+    elif cmd in ('search', 'search-json'):
         if len(sys.argv) < 3:
-            print('Usage: index-vault.py search <query>')
+            print(f'Usage: index-vault.py {cmd} <query> [--expand <terms-csv>]')
             sys.exit(1)
-        cmd_search(' '.join(sys.argv[2:]))
-    elif cmd == 'search-json':
-        if len(sys.argv) < 3:
-            print('Usage: index-vault.py search-json <query>')
-            sys.exit(1)
-        cmd_search_json(' '.join(sys.argv[2:]))
+        # Parse --expand flag from args
+        args = sys.argv[2:]
+        expanded = None
+        if '--expand' in args:
+            idx = args.index('--expand')
+            if idx + 1 < len(args):
+                expanded = args[idx + 1]
+                args = args[:idx]  # query is everything before --expand
+            else:
+                print('Error: --expand requires a comma-separated terms argument')
+                sys.exit(1)
+        query = ' '.join(args)
+        if cmd == 'search':
+            cmd_search(query, expanded_terms=expanded)
+        else:
+            cmd_search_json(query, expanded_terms=expanded)
     elif cmd == 'update':
         if len(sys.argv) < 5:
             print('Usage: index-vault.py update <path> <summary> <keywords-csv> [related-csv]')
