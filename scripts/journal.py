@@ -22,8 +22,9 @@ Usage:
   python3 scripts/journal.py by-category <category>
   python3 scripts/journal.py by-tag <tag>
   python3 scripts/journal.py refs <id>
+  python3 scripts/journal.py backup
   python3 scripts/journal.py dump
-  python3 scripts/journal.py rebuild [sql-file]
+  python3 scripts/journal.py rebuild [sql-file] [--force]
   python3 scripts/journal.py stats
 """
 
@@ -307,25 +308,122 @@ def cmd_dump():
     print(f'Dumped to {DUMP_PATH}')
 
 
-def cmd_rebuild(sql_file=None):
-    """Rebuild journal.db from a SQL dump file."""
+def cmd_backup():
+    """Safe backup: dump to temp file, verify, then atomically replace.
+
+    This is the ONLY safe way to update journal.sql. Never use shell
+    redirects with dump — cmd_dump() writes to the file directly AND
+    prints to stdout, so '> journal.sql' overwrites the good dump with
+    the status line.
+    """
+    import shutil
+    import tempfile
+
+    if not os.path.exists(DB_PATH):
+        print('No journal database found.')
+        return False
+
+    # 1. Count entries in live DB
+    conn = get_db()
+    db_count = conn.execute('SELECT COUNT(*) FROM journal').fetchone()[0]
+    if db_count == 0:
+        print('Journal is empty — nothing to back up.')
+        conn.close()
+        return False
+
+    # 2. Dump SQL to temp file
+    raw_conn = sqlite3.connect(DB_PATH)
+    dump = '\n'.join(raw_conn.iterdump())
+    raw_conn.close()
+    conn.close()
+
+    tmp_fd, tmp_path = tempfile.mkstemp(suffix='.sql', prefix='journal-backup-')
+    try:
+        with os.fdopen(tmp_fd, 'w') as f:
+            f.write(dump)
+            f.write('\n')
+
+        # 3. Verify: count INSERT statements in the dump
+        insert_count = dump.count('INSERT INTO "journal"')
+        if insert_count < db_count:
+            print(f'VERIFICATION FAILED: DB has {db_count} entries but dump has {insert_count} INSERTs.')
+            print(f'Temp file preserved at {tmp_path} for inspection.')
+            return False
+
+        # 4. Verify: rebuild from temp into in-memory DB and count
+        verify_conn = sqlite3.connect(':memory:')
+        verify_conn.executescript(dump)
+        verify_count = verify_conn.execute('SELECT COUNT(*) FROM journal').fetchone()[0]
+        verify_conn.close()
+
+        if verify_count != db_count:
+            print(f'VERIFICATION FAILED: DB has {db_count} entries but rebuilt dump has {verify_count}.')
+            print(f'Temp file preserved at {tmp_path} for inspection.')
+            return False
+
+        # 5. Atomically replace DUMP_PATH
+        os.makedirs(os.path.dirname(DUMP_PATH), exist_ok=True)
+        shutil.move(tmp_path, DUMP_PATH)
+        print(f'Backed up {db_count} entries to {DUMP_PATH} (verified)')
+        return True
+
+    except Exception as e:
+        print(f'Backup failed: {e}')
+        if os.path.exists(tmp_path):
+            print(f'Temp file preserved at {tmp_path} for inspection.')
+        return False
+
+
+def cmd_rebuild(sql_file=None, force=False):
+    """Rebuild journal.db from a SQL dump file.
+
+    Safety: validates the SQL file contains entries before deleting the
+    existing DB. Backs up the existing DB before replacement.
+    """
+    import shutil
+
     sql_file = sql_file or DUMP_PATH
 
     if not os.path.exists(sql_file):
         print(f'SQL dump not found: {sql_file}')
         return False
 
+    # Read and validate SQL before touching the DB
+    with open(sql_file, 'r') as f:
+        sql = f.read()
+
+    insert_count = sql.count('INSERT INTO "journal"')
+    if insert_count == 0 and os.path.exists(DB_PATH) and not force:
+        db_count = sqlite3.connect(DB_PATH).execute('SELECT COUNT(*) FROM journal').fetchone()[0]
+        if db_count > 0:
+            print(f'REFUSED: SQL file has 0 INSERTs but existing DB has {db_count} entries.')
+            print(f'This would destroy data. Run "backup" first, or pass --force to override.')
+            return False
+
+    # Back up existing DB before deletion
+    if os.path.exists(DB_PATH):
+        backup_path = DB_PATH + '.bak'
+        shutil.copy2(DB_PATH, backup_path)
+
     # Remove existing db to rebuild clean
     if os.path.exists(DB_PATH):
         os.remove(DB_PATH)
 
     conn = sqlite3.connect(DB_PATH)
-    with open(sql_file, 'r') as f:
-        sql = f.read()
     conn.executescript(sql)
     conn.close()
 
-    count = sqlite3.connect(DB_PATH).execute('SELECT COUNT(*) FROM journal').fetchone()[0]
+    try:
+        count = sqlite3.connect(DB_PATH).execute('SELECT COUNT(*) FROM journal').fetchone()[0]
+    except sqlite3.OperationalError:
+        print(f'ERROR: Rebuilt DB has no journal table. SQL file may be invalid.')
+        # Restore backup if available
+        backup_path = DB_PATH + '.bak'
+        if os.path.exists(backup_path):
+            shutil.copy2(backup_path, DB_PATH)
+            print(f'Restored from backup at {backup_path}')
+        return False
+
     print(f'Rebuilt {DB_PATH} from {sql_file} ({count} entries)')
     return True
 
@@ -390,8 +488,9 @@ Commands:
   by-category <category>                    Filter by category
   by-tag <tag>                              Filter by tag
   refs <id>                                 Find entries referencing ID
-  dump                                      Export to journal.sql
-  rebuild [sql-file]                        Rebuild db from SQL dump
+  backup                                    Safe dump: verify then atomically replace journal.sql
+  dump                                      Export to journal.sql (prefer 'backup' for safety)
+  rebuild [sql-file]                        Rebuild db from SQL dump (validates before deletion)
   stats                                     Show statistics
 
 Categories: learning, correction, decision, experiment, conversation
@@ -465,12 +564,20 @@ if __name__ == '__main__':
             sys.exit(1)
         cmd_refs(int(sys.argv[2]))
 
+    elif cmd == 'backup':
+        cmd_backup()
+
     elif cmd == 'dump':
         cmd_dump()
 
     elif cmd == 'rebuild':
-        sql_file = sys.argv[2] if len(sys.argv) > 2 else None
-        cmd_rebuild(sql_file)
+        force = '--force' in sys.argv
+        sql_file = None
+        for arg in sys.argv[2:]:
+            if arg != '--force':
+                sql_file = arg
+                break
+        cmd_rebuild(sql_file, force=force)
 
     elif cmd == 'stats':
         cmd_stats()
