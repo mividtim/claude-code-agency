@@ -116,11 +116,37 @@ Each belief becomes Justified True Belief — traceable back to the experiences
 that produced it. A belief without journal references is an assertion. A belief
 with references is knowledge.
 
+### Backup (safe dump)
+
+**Always use `backup` instead of `dump` for routine SQL export.**
+
+```
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py backup")
+```
+
+`backup` dumps to a temp file, verifies the INSERT count and in-memory
+rebuild match the live DB, then atomically replaces `journal.sql`. This
+prevents the footgun where shell redirects with `dump` overwrite good data.
+
+**Never** do `journal.py dump > journal.sql` — `dump` writes to the file
+directly AND prints status to stdout, so the redirect captures only the
+status line and overwrites the real dump.
+
+### Rebuild
+
+```
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py rebuild")
+```
+
+Rebuild validates the SQL file has entries before deleting the existing DB.
+If the SQL is empty, rebuild refuses (pass `--force` to override). The
+existing DB is backed up to `.bak` before deletion.
+
 ## Git Strategy
 
 - `journal.db` is .gitignored (binary)
 - `journal.sql` (text dump) lives in git
-- A pre-push hook dumps the db to SQL automatically
+- Use `backup` (not `dump`) to update the SQL file safely
 - On fresh clone, run `journal.py rebuild` to recreate the db from the dump
 - The boot sequence handles this automatically
 
