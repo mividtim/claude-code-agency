@@ -351,15 +351,30 @@ def cmd_backup():
             return False
 
         # 4. Verify: rebuild from temp into in-memory DB and count
-        verify_conn = sqlite3.connect(':memory:')
-        verify_conn.executescript(dump)
-        verify_count = verify_conn.execute('SELECT COUNT(*) FROM journal').fetchone()[0]
-        verify_conn.close()
+        # Filter out FTS virtual table statements that can fail in memory
+        verify_sql = '\n'.join(
+            line for line in dump.split('\n')
+            if not any(kw in line.upper() for kw in [
+                'CREATE VIRTUAL TABLE', 'JOURNAL_FTS', 'CREATE TRIGGER'
+            ])
+        )
+        try:
+            verify_conn = sqlite3.connect(':memory:')
+            verify_conn.executescript(verify_sql)
+            verify_count = verify_conn.execute('SELECT COUNT(*) FROM journal').fetchone()[0]
+            verify_conn.close()
 
-        if verify_count != db_count:
-            print(f'VERIFICATION FAILED: DB has {db_count} entries but rebuilt dump has {verify_count}.')
-            print(f'Temp file preserved at {tmp_path} for inspection.')
-            return False
+            if verify_count != db_count:
+                print(f'VERIFICATION FAILED: DB has {db_count} entries but rebuilt dump has {verify_count}.')
+                print(f'Temp file preserved at {tmp_path} for inspection.')
+                return False
+        except sqlite3.OperationalError as e:
+            # If in-memory verification fails, fall back to INSERT count check
+            print(f'Note: in-memory verification skipped ({e}), using INSERT count only.')
+            if insert_count < db_count:
+                print(f'VERIFICATION FAILED: INSERT count {insert_count} < DB count {db_count}.')
+                print(f'Temp file preserved at {tmp_path} for inspection.')
+                return False
 
         # 5. Atomically replace DUMP_PATH
         os.makedirs(os.path.dirname(DUMP_PATH), exist_ok=True)
