@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.1 — Release Notes Practice
+
+### Added
+- GitHub releases for v2.0.0, v2.1.0, and v2.1.1 — tags without releases are
+  invisible to users browsing the repo.
+- "Publishing Releases" section in CLAUDE.md — `gh release create` is now a
+  required step when publishing new versions.
+
 ## 2.1.0 — Compression Resilience
 
 Upstreams findings from 129 compaction cycles of empirical operation into

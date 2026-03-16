@@ -265,3 +265,14 @@ determines what survives. Stock it with:
 
 What to keep OUT of the priority fringe: completed work, historical data that's
 in the journal, anything that can be re-derived from vault files on demand.
+
+### Publishing Releases
+
+When publishing a new version of this plugin:
+
+1. Update `CHANGELOG.md` with the new version and changes
+2. Update `.claude-plugin/plugin.json` version field
+3. Commit, tag (`git tag vX.Y.Z`), and push with tags
+4. **Create a GitHub release** with `gh release create vX.Y.Z` including
+   release notes derived from the changelog entry. This is not optional —
+   tags without releases are invisible to users browsing the repo.
