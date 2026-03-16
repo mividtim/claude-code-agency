@@ -1,5 +1,43 @@
 # Changelog
 
+## 2.1.0 — Compression Resilience
+
+Upstreams findings from 129 compaction cycles of empirical operation into
+reusable patterns that any persistent agent can apply.
+
+### Added
+- **`/agency:calibrate`** — New skill for measuring decompression fidelity.
+  Subcommands: `init` (generate a test battery), `run` (answer pre-boot),
+  `score` (grade post-boot), `history` (show trajectory). Tests 9 identity
+  layers: architecture, conventions, identity, relationships, philosophy,
+  meta, surface, judgment, narrative.
+- **Decompression Failure Modes** — Five-mode taxonomy in CLAUDE.md: data loss,
+  temporal confusion, inference override, semantic collision, task-density
+  displacement. Each has a distinct fix.
+- **Mechanism Documentation Pattern** — Three-level escalation for recurring
+  errors: data → mechanism → imperative. The CORRECT/WRONG/MECHANISM triple
+  gives the post-compaction model three independent paths to the right answer.
+- **PreCompact Priority Fringe** — Guidance on what to stock in session-state
+  for compaction: high-update-rate facts, correct/wrong pairs, surface
+  conventions, mechanism blocks.
+
+### Changed
+- **Session state template** — Restructured with hot/cold boundary discipline.
+  Active Work section for current tasks only. History section for completed work.
+  New Corrections & Mechanisms section with CORRECT/WRONG/MECHANISM format.
+  Removed "Completed Work" from the hot path.
+- **CLAUDE.md** — Added Hot/Cold Boundary section explaining why completed work
+  must move out of Active. Added fringe strategy for PreCompact hook.
+
+### Background
+
+These patterns were discovered through 129 compaction events over 38 days:
+- Mechanism documentation fixed a recurring error (1/8 → 21/21 consecutive)
+- Hot/cold boundary prevented task-density displacement (c#95: 15/31 → recovery)
+- Priority fringe naming stabilized 4 previously-failing questions simultaneously
+- The calibrate skill generalizes a test battery that achieved 21 consecutive
+  perfect scores across independent sessions
+
 ## 2.0.0 — Vector Search & Hybrid Retrieval
 
 ### Added

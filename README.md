@@ -42,6 +42,7 @@ That's it. After compaction, the boot sequence reads the agent's identity, scans
 | `/agency:vectorize` | Build or update semantic embeddings for memory files |
 | `/agency:enrich [query]` | Hybrid search — keyword + vector + LLM filtering |
 | `/agency:associate [query]` | Fast keyword-only association lookup (<100ms) |
+| `/agency:calibrate [init\|run\|score\|history]` | Measure decompression fidelity after compaction |
 
 ## Search
 
@@ -86,6 +87,28 @@ The boot sequence reads identity and session state, scans memory headers for a t
 **Never Block the Main Thread** — Background processes write to files. The main thread reads files when convenient. Blocking waits for external events cause unresponsive sessions (learned the hard way: a 16-hour outage).
 
 **Identity Survives Compaction** — The memory directory bridges the gap between sessions. The agent reconstructs itself from notes written by its prior self.
+
+## Compression Resilience
+
+Compaction is lossy. The plugin includes patterns derived from 129 compaction
+events to help your agent survive it:
+
+**Calibration** — `/agency:calibrate init` generates a test battery tailored to
+your agent's identity. After each compaction, the agent answers the test from
+memory alone (before boot), then scores itself. This measures which identity
+layers are degrading and where to invest in fixes.
+
+**Mechanism documentation** — When the same fact keeps getting wrong after
+compaction, use the CORRECT/WRONG/MECHANISM triple in session-state.md. This
+gives the post-compaction model three independent paths to the right answer.
+
+**Hot/cold boundary** — Keep session state lean. Completed work goes to History,
+not Active Work. Task-dense session state crowds out identity during compression.
+
+**Priority fringe** — Stock session-state with high-update-rate facts, correct/wrong
+pairs, and surface conventions. These are what the compressor drops first.
+
+See CLAUDE.md "Decompression Failure Modes" for the full taxonomy.
 
 ## Identity Template
 

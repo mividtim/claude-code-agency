@@ -1,6 +1,6 @@
 {
   "name": "agency",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Persistent agent patterns for Claude Code. Boot sequence, memory architecture, journal system, and identity management for agents that survive context compaction.",
   "author": {
     "name": "Tim Garthwaite",
@@ -8,5 +8,5 @@
   },
   "repository": "https://github.com/mividtim/claude-code-agency",
   "license": "MIT",
-  "keywords": ["agent", "persistent", "identity", "memory", "boot-sequence", "semantic-search", "index", "vault", "journal", "event-sourcing", "provenance", "vector-search", "hybrid-search", "embeddings", "sonnet-filter"]
+  "keywords": ["agent", "persistent", "identity", "memory", "boot-sequence", "semantic-search", "index", "vault", "journal", "event-sourcing", "provenance", "vector-search", "hybrid-search", "embeddings", "sonnet-filter", "compression", "calibration", "decompression", "resilience"]
 }

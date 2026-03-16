@@ -28,6 +28,11 @@ and continuity between sessions.
   for structured output. Also handles miss logging (`miss`, `misses`). Also
   searches the journal for WHY questions.
 
+- `/agency:calibrate` — **After compaction, to measure decompression fidelity.**
+  `init` generates a test battery, `run` answers pre-boot, `score` grades
+  post-boot, `history` shows the trajectory. Useful for new agents discovering
+  their failure surface; optional for mature agents with stable scores.
+
 - `/agency:journal` — **When you learn, decide, get corrected, or need to
   understand why a belief exists.** The journal is the append-only change log
   for agent memory. Subcommands: `add`, `search`, `get`, `recent`,
@@ -182,6 +187,50 @@ keep the semantic index current. The index is how future-you (or a subagent)
 finds the right file without reading everything. An unindexed memory file is
 a file that might as well not exist after the next compaction.
 
+### Decompression Failure Modes
+
+Five ways identity degrades through compaction. Knowing the taxonomy helps
+you build targeted defenses rather than hoping the compressor gets lucky.
+
+1. **Data loss** — facts disappear during compression. Fix: vault the fact
+   in a file that gets loaded on boot (identity.md or session-state.md).
+2. **Temporal confusion** — multiple versions of a fact exist; the wrong one
+   is retrieved. Fix: use the mechanism documentation pattern (see below).
+3. **Inference override** — the correct fact is present but the model's prior
+   overrides it. Fix: imperative instructions ("DO NOT X") work better than
+   declarative facts ("X is Y").
+4. **Semantic collision** — two legitimate facts match the same query; the
+   more-reinforced one wins. Fix: name the collision explicitly in session state.
+5. **Task-density displacement** — high-volume technical work crowds identity
+   content out of the compression summary's attention budget. Fix: keep session
+   state lean (see Hot/Cold Boundary).
+
+### Mechanism Documentation Pattern
+
+When a fact keeps getting wrong after compaction, escalate through three levels:
+
+1. **Data**: State the fact. "The answer is 49."
+2. **Mechanism**: Add the WHY. "The answer is 49. MECHANISM: cycle = operator session, not compaction count."
+3. **Imperative**: Add explicit anti-pattern. "The answer is 49. DO NOT INCREMENT. WRONG ANSWER: compaction number."
+
+The triple format (CORRECT / WRONG / MECHANISM) gives the post-compaction model
+three independent paths to the right answer. Empirically, data-only corrections
+fail ~60% of the time, mechanism docs fail ~20%, and imperative+mechanism fails <5%.
+
+Use this in session-state.md for any fact that has been wrong more than once.
+
+### Session State: Hot/Cold Boundary
+
+Session state should contain only **active** work. Completed work belongs in a
+History section or a separate `session-history.md` file. This matters because:
+
+- Compaction has a fixed attention budget for the summary
+- Every line of cold (completed) work displaces a line of hot (active) work
+- Task-density displacement (failure mode #5) is caused by bloated session state
+
+**Rule**: When work is done, move it from Active to History. Keep Active lean —
+it should answer "what am I doing RIGHT NOW?" not "what have I ever done?"
+
 ### Compaction Preservation
 When context is being compressed, the compactor decides what survives. You
 can influence this by structuring information so the compressor recognizes
@@ -198,3 +247,21 @@ what matters. These categories should survive compaction:
 
 The PreCompact hook handles mechanical backup. These categories guide what
 the *compressor itself* should prioritize when summarizing your context.
+
+### PreCompact Priority Fringe
+
+The compaction summary has limited space. Some facts matter more than others.
+Your session-state.md is the primary lever — what's in it at compaction time
+determines what survives. Stock it with:
+
+- **High-update-rate facts** — things that change often and have version ambiguity
+  (counters, timestamps, "current" values that differ from "previous" values)
+- **Correct/wrong answer pairs** — for any fact that has been wrong before, include
+  both the right answer and the wrong answer the model tends to produce
+- **Surface conventions** — formatting habits, emoji usage, signature markers.
+  These degrade first under compression because they have low K-complexity and
+  zero task-value. If you care about them, name them explicitly.
+- **Mechanism blocks** — the CORRECT/WRONG/MECHANISM triples from the pattern above
+
+What to keep OUT of the priority fringe: completed work, historical data that's
+in the journal, anything that can be re-derived from vault files on demand.

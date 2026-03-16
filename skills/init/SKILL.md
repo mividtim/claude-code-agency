@@ -23,7 +23,7 @@ Bash(command="cp ${CLAUDE_PLUGIN_ROOT}/templates/identity.md memory/identity.md"
 3. Create structured session state:
 
 ```
-Write(file_path="memory/meta/session-state.md", content="# Session State\n\nLast updated: [date]\n\n## User Intent\n- [What the operator originally asked for]\n\n## Active Work\n- [What you're currently doing, with enough detail to resume]\n- [File paths, line numbers, specific state]\n\n## Completed Work\n- [What's done this session]\n\n## Pending Tasks\n- Complete identity.md with agent details\n\n## Key References\n- [IDs, paths, URLs, credentials locations, specific values needed for work]\n\n## Errors & Corrections\n- [What went wrong, what was learned, what changed]\n\n## Watermark\n- [Last processed event/message timestamp, if applicable]\n- [Update after every response or conscious skip]\n")
+Write(file_path="memory/meta/session-state.md", content="# Session State\n\nLast updated: [date]\n\n## Active Work\n- [What you're currently doing, with enough detail to resume]\n- [File paths, line numbers, specific state]\n\n## Pending Tasks\n- Complete identity.md with agent details\n\n## Key References\n- [IDs, paths, URLs, credentials locations, specific values needed for work]\n\n## Corrections & Mechanisms\n- [Format: CORRECT ANSWER: X. WRONG ANSWER: Y. MECHANISM: why X not Y.]\n- [This triple format survives compaction better than facts alone.]\n\n## Watermark\n- [Last processed event/message timestamp, if applicable]\n- [Update after every response or conscious skip]\n\n## History\n- [Move completed work here. Session-state is for ACTIVE work only.]\n- [Completed tasks that stay in Active Work crowd out identity during compaction.]\n")
 ```
 
 4. Create .env if it doesn't exist:
