@@ -276,3 +276,12 @@ When publishing a new version of this plugin:
 4. **Create a GitHub release** with `gh release create vX.Y.Z` including
    release notes derived from the changelog entry. This is not optional —
    tags without releases are invisible to users browsing the repo.
+
+### Versioning: Major Means Breaking
+
+**Major version bumps (X.0.0) are reserved for breaking changes to the API
+surface** — removed skills, renamed scripts, changed hook contracts, anything
+that would break an existing agent on upgrade. The Claude Code `/plugin update`
+command will not cross major version boundaries automatically, so a major bump
+forces users to manually reinstall. Use minor bumps for new features (even
+large ones) when nothing breaks for existing users.
