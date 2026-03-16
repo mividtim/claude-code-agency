@@ -36,6 +36,11 @@ Run `/agency:scan` to get a table of contents of archival memory files without l
    - If `memory/journal.db` exists, run `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py stats")` to verify.
    - If `memory/journal.db` doesn't exist but `memory/journal.sql` does, rebuild: `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py rebuild")`
    - If neither exists, initialize: `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py init")`
+4. Vector index check:
+   - If sentence-transformers is available and `memory/vectors.db` exists,
+     run `Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/vectorize.py --stats")`
+   - If vectors.db doesn't exist but deps are available, consider
+     running a full vectorization (agent's discretion — takes ~30s)
 
 ## Phase 4: Environment Check
 

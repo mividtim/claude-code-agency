@@ -129,4 +129,13 @@ Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/journal.py get 42")
 - After finding candidates, deep-read the top results
 - Log misses — they help you improve keyword coverage over time
 
+## Deeper Search
+
+For semantic similarity search (beyond keyword matching), use `/agency:enrich`.
+This runs vector embedding search alongside keyword search and optionally
+filters results through a Sonnet relevance judgment.
+
+Requires: sentence-transformers (`pip install sentence-transformers`)
+Optional: ANTHROPIC_API_KEY (for Sonnet filtering)
+
 `$ARGUMENTS` is passed as the search query.

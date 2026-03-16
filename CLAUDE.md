@@ -95,6 +95,22 @@ dump if needed.
 
 ## Key Principles
 
+### Vector Search (Optional)
+
+The vector embedding pipeline (vectorize, vector-search, enrich) requires
+sentence-transformers, which is a heavy dependency (~2GB with PyTorch). It
+is entirely optional — all existing keyword-based search continues to work
+without it. Agents that install it gain:
+- Semantic similarity search (finds related files even when keywords don't overlap)
+- Hybrid search combining keyword and vector signals
+- Sonnet-filtered results for high-value queries
+
+Install: `pip install sentence-transformers`
+The first embedding run takes ~30s for a typical vault. Incremental updates
+are fast (~1s per file).
+
+Sonnet filtering requires `ANTHROPIC_API_KEY` in the environment.
+
 ### Memory as Library, Not RAM
 Don't read everything at boot. Load **core memory** (identity, session state)
 always. Scan headers for **archival memory**. Deep-read on demand.

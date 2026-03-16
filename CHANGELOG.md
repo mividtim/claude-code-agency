@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.0.0 — Vector Search & Hybrid Retrieval
+
+### Added
+- **Vector embeddings** (`/agency:vectorize`): Build and maintain semantic embeddings using sentence-transformers (all-MiniLM-L6-v2, 384-dim). Content-hash change detection for incremental updates. Stores in `memory/vectors.db`.
+- **Hybrid search** (`/agency:enrich`): Multi-source search combining keyword expansion (IDF-weighted spreading activation), semantic index matching, vector similarity, and journal FTS5. Optional Sonnet-based relevance filtering.
+- **Quick associations** (`/agency:associate`): Fast keyword-only association lookup (<100ms). Suitable for hooks and quick context injection.
+- **Association hook**: UserPromptSubmit hook that injects keyword associations on every user prompt. Keyword-only (no vector) to stay within 5s timeout.
+- `scripts/vectorize.py`: Unified embedding script (full build, incremental, single-file update, stats, dependency check)
+- `scripts/vector-search.py`: Cosine similarity search library with CLI
+- `scripts/association-search.py`: Multi-source search orchestrator with graceful degradation
+- `scripts/sonnet-filter.py`: LLM-based relevance filtering via Anthropic API
+
+### Changed
+- `/agency:search` now cross-references `/agency:enrich` for deeper search
+- `/agency:boot` checks vector index health in Phase 3
+- `/agency:journal` suggests vector update after new entries
+
+### Migration
+Nothing breaks. All new capabilities are opt-in:
+1. Update to v2.0.0
+2. (Optional) `pip install sentence-transformers` for vector search
+3. (Optional) Run `/agency:vectorize` for initial embedding build
+4. (Optional) Set `ANTHROPIC_API_KEY` for Sonnet filtering
+
 ## 1.5.0
 
 ### New: PreCompact Hook

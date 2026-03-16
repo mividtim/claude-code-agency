@@ -43,6 +43,14 @@ Categories: `learning`, `correction`, `decision`, `experiment`, `conversation`
 After adding, note the `j:N` ID. If this entry should be referenced from
 identity.md or another core file, add the reference: `[j:N]`.
 
+### Vector Update
+
+After adding a journal entry, if vector embeddings are available, update:
+
+```
+Bash(command="python3 ${CLAUDE_PLUGIN_ROOT}/scripts/vectorize.py update --journal $ID")
+```
+
 ### Search the Journal
 
 Before changing core beliefs, search for prior context:

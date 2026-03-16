@@ -39,6 +39,29 @@ That's it. After compaction, the boot sequence reads the agent's identity, scans
 | `/agency:boot` | After context compaction — restores identity and continuity |
 | `/agency:init [name]` | Once — sets up the memory directory structure |
 | `/agency:scan [term]` | During boot or on demand — indexes memory file headers |
+| `/agency:vectorize` | Build or update semantic embeddings for memory files |
+| `/agency:enrich [query]` | Hybrid search — keyword + vector + LLM filtering |
+| `/agency:associate [query]` | Fast keyword-only association lookup (<100ms) |
+
+## Search
+
+The plugin supports three tiers of search, each adding capability on top of the last:
+
+**Keyword search** (zero dependencies) — The built-in semantic index matches keywords and synonyms across memory files. This is what `/agency:scan` uses during boot.
+
+**Vector search** (optional: `pip install sentence-transformers`) — Run `/agency:vectorize` to build 384-dim embeddings for every memory file. Incremental updates via content-hash change detection, stored in `memory/vectors.db`. This enables similarity search that finds conceptually related files even when they share no keywords.
+
+**Hybrid search with LLM filtering** (optional: `ANTHROPIC_API_KEY`) — `/agency:enrich` combines keyword expansion, semantic index, vector similarity, and journal FTS5 into a single ranked result set. When an Anthropic API key is available, a Sonnet pass filters results for relevance, cutting noise from broad queries.
+
+Quick start:
+
+```shell
+pip install sentence-transformers   # optional, enables vector search
+/agency:vectorize                   # build embeddings (~30s for typical vault)
+/agency:enrich "identity persistence"  # hybrid search
+```
+
+The association hook runs on every user prompt, injecting keyword matches automatically. It uses keyword-only lookup to stay within the 5-second hook timeout.
 
 ## How It Works
 
